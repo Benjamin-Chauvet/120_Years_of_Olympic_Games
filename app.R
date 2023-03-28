@@ -1,5 +1,6 @@
 
 library(shiny)
+library(readr)
 library(leaflet)
 library(maps)
 library(kableExtra)
@@ -17,9 +18,10 @@ library(ggthemes)
 
 #Importation des données
 
-df <- read.csv("data/Olympic Athletes and Events.csv")
+# setwd("C:/Users/Ben/Documents/R_Shiny_Olympics")
+df_kaggle <- read.csv("data/Olympic Athletes and Events.csv")
 
-df <- df |> mutate(df, host = ifelse(City == "Rio de Janeiro", "Brazil",
+df <- df_kaggle |> mutate(df_kaggle, host = ifelse(City == "Rio de Janeiro", "Brazil",
                                 ifelse(City == "London", "United Kingdom",
                                   ifelse(City == "Beijing", "China",
                                     ifelse(City == "Athina", "Greece",
@@ -40,7 +42,6 @@ df <- df |> mutate(df, host = ifelse(City == "Rio de Janeiro", "Brazil",
                                                                   ifelse(City == "Stockholm", "Sweden",
                                                                   "Other"))))))))))))))))))))
 
-
 df$Medal_bin <- 0
 df$Medal_bin[df$Medal!="NA"] <- 1
 df$Gold <- 0
@@ -53,6 +54,7 @@ df$Bronze[df$Medal == "Bronze"] <- 1
 df_noc <- read.csv("data/noc_regions.csv")
 df <- merge(df, df_noc, on="NOC")
 df <- df |> rename(Country = region)
+
 
 df$Country[df$Country=="Boliva"] <- "Bolivia"
 df$Country[df$Country=="Ivory Coast"] <- "Côte d'Ivoire"
@@ -98,24 +100,26 @@ ui <- navbarPage(
     br(),
     tabPanel("Home", column(7,
              wellPanel(
-             h1("Home"),
+             h1(strong("Home")),
              p("This app is based on 120 years of Olympic Games, from 1896 to 2016. The database used is", em("Olympic Athletes and Events"), 
-             "from Kaggle. And composed with the athletes' name, their characteristics, their sports, the city of the OG, the year or the season."),
-             h3("Summer & Winter games"),
+             "from Kaggle. Its composed with the athletes' name, their characteristics, their sports, the city hosting the games, the year or the season."),
+             h3(strong("Summer & Winter games")),
              p(strong("Goal:"), "Have some statistics about the repartition of medals among every participating countries and have the performance of these countries."),
                p("We separate summer and winter games because the results for the countries are very different depending on the season.
                To see the repartition of medals we made a choropleth map, with the possibiliy to filter.
                And, to see the performance we made a table."),
-             h3("Hosting impact"),
+             h3(strong("Hosting impact")),
              p(strong("Goal:"), "Answer the question : does hosting games has an impact on medals performances ?"),
-             p("We made a barplot to see the results depending on every host country, with a distinction between every types of medals.
-               We create a diagram with points, to compare the host countries with the total number of medals the year which they host the games and 
+             p("In this part, to compare performance we're looking at both the total number of medals and the number of gold medals as the olympics ranking is based on these."),
+             p("We first made a barplot to see the results depending on every host country, with a distinction between every types of medals.
+               We then created a points diagram, to compare the host countries with the total number of medals the year which they did host the games and 
                the mean of every other years.
-               We also made the same graphic but only with the gold medals, because the ranking are made with this."), 
+               We also made the same graphic but based on the total number of gold medals."), 
              h4("See you in 2024..."),
-             downloadLink('downloadData', 'Download data'))),
+             downloadLink('downloadData', 'Download data')
+             )),
             column(3,
-                   img(src="ceremony.jpg", align = "center", height=500)),),
+                   img(src="bolt.gif", align = "center", height=535)),),
       tabPanel("Summer",
                sidebarLayout(
                  sidebarPanel(h3("Choose your filters:"), width=3, 
@@ -311,7 +315,7 @@ server <- function(input, output,session) {
       geom_bar(stat="identity")+
       scale_fill_manual(values = c("#7E5109", "#BDC3C7", "#FFBF00"))+
       scale_alpha_manual(values = c(.5, 1))+
-      xlim(min(input$slider_year)-2, max(input$slider_year)+2)+ #ylim(0,max(input$slider_medals))+
+      xlim(min(input$slider_year)-2, max(input$slider_year)+2)+
       labs(x="Games Year", y="Medals number", title = paste("Hosting impact on medals for", input$var_country), fill="Medal")+
       theme_minimal() +
       guides(alpha = F) 
@@ -350,10 +354,10 @@ server <- function(input, output,session) {
   output$tableinitwinter <- renderDataTable(data_init_winter)
   
   output$downloadData <- downloadHandler(filename = function() {
-    paste('data-', Sys.Date(), '.csv', sep='')
+    paste('Olympics-data-', Sys.Date(), '.csv', sep='')
     },
     content = function(con) {
-      write.csv(df, con)
+      write.csv(df_kaggle, con)
     }
   )
 
